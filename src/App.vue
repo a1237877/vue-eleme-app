@@ -13,7 +13,8 @@
         <router-link to="/seller">商家</router-link>
       </div>
     </div>
-    <router-view></router-view>
+    <!-- 把App.vue里面的数据传到good.vue里 -->
+    <router-view :seller="seller"></router-view> 
   </div>
 </template>
 

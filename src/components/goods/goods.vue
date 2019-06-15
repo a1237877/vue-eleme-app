@@ -12,7 +12,7 @@
           >
           <span class="text border-1px">
             <span class="icon" v-show="item.type > 0" :class="classMap[item.type]"></span>
-            {{item.name}}
+            {{item.name}} 
           </span>
           </li>
         </ul>
@@ -40,7 +40,7 @@
                   </div>
                   <!-- 添加按钮 -->
                   <div class="cartcontrol-wrapper">
-                    <cartcontrol :food="food" @add="addFood"></cartcontrol>
+                    <cartcontrol :food="food" @add="addFood"></cartcontrol> 
                   </div>
                 </div>
 
@@ -49,6 +49,8 @@
           </li>
         </ul>
       </div>
+      <shopcart ref="shopcart"  :selectFoods="selectFoods" :deliveryPrice="seller.deliveryPrice"
+       :minPrice="seller.minPrice" ></shopcart>
     </div>
   </div>
 </template>
@@ -56,21 +58,68 @@
 <script>
 import BScroll from 'better-scroll'
 import cartcontrol from '@/components/cartcontrol/cartcontrol'
+import shopcart from '@/components/shopcart/shopcart'
 export default {
-  name: 'Goods',
+  name: 'Goods', 
   data () {
     return {
       classMap: [],
-      goods: []
+      goods: [],
+      listHeight:[],
+      scrollY:0
     }
   },
+  props:{
+    seller:{
+      type: Object
+    }
+  },
+  computed: {
+    currentIndex(){
+      for(let i =0; i < this.listHeight.length; i++){
+        let height1 = this.listHeight[i];
+        let height2 = this.listHeight[i+1];
+        if(!height2 || (this.scrollY >= height1 && this.scrollY < height2)){
+          return i
+        }
+      }
+      return 0
+    },
+    selectFoods(){
+      let foods = [];
+      this.goods.forEach(good=>{
+        good.foods.forEach(food=>{
+          if(food.count){
+            foods.push(food)
+          }
+        })
+      })
+      return foods
+    }
+
+  },
   methods: {
+    selectMenu(index,event){
+      if(!event._constructed){
+        return 
+      }
+      let foodList = this.$refs.foodList
+      let el = foodList[index]
+      this.foodScroll.scrollToElement(el,300) //可以在点击相应的el结构时 获取到相应的DOM结构
+    },
     _initScroll () {
       this.menuScroll = new BScroll(this.$refs.menuWrapper, {
         click: true
       })
       this.foodScroll = new BScroll(this.$refs.foodWrapper,{  
-        click: true
+        click: true,
+        probeType:3
+      })
+      //on 方法 BScroll API
+      this.foodScroll.on('scroll',pos => {
+        // console.log(pos)
+        this.scrollY = Math.abs(Math.round(pos.y))
+        // console.log(this.scrollY)
       })
     },
     addFood(target){
@@ -81,10 +130,21 @@ export default {
       this.$nextTick(()=>{
         //动画组件
       })
+    },
+    _calculateHeight(){
+      let foodList = this.$refs.foodList;
+      let height = 0;
+      this.listHeight.push(height)
+      for(let i = 0;i < foodList.length;i++){
+        let item = foodList[i]
+        height += item.clientHeight
+        this.listHeight.push(height)  //会有8条数据 有第一个li 第一个加一二个li 。。。的高度
+      }
     }
   },
   components:{
-    cartcontrol
+    cartcontrol,
+    shopcart
   },
   created () {
     this.classMap = ['decrease', 'discount', 'special', 'invoice', 'guarantee']
@@ -96,6 +156,7 @@ export default {
           this.goods = res.data.data
           this.$nextTick(() => { //页面渲染完成才能执行
             this._initScroll()
+            this._calculateHeight()
           })
         }
       })

@@ -1,4 +1,4 @@
-<template>
+<template> 
   <div class="cartcontrol">
     <!-- vue 自带动画API -->
     <transition name="move">
@@ -17,7 +17,7 @@ export default {
   name:'cartcontrol',
   data() {
     return {
-      count
+      
     }
   },
   props:{
