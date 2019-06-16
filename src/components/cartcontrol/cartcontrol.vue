@@ -32,9 +32,9 @@ export default {
     addCart:function(event){
       //event 表示点击事件
       // console.log(event)
-      if(!event._constructed){//如果不存在这个属性 则为原生点击事件 不执行下面的函数
-        return
-      }
+      // if(!event._constructed){//如果不存在这个属性 则为原生点击事件 不执行下面的函数
+      //   return
+      // }
       if(!this.food.count){
         this.$set(this.food,'count',1)
       }

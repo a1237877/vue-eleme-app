@@ -7,6 +7,8 @@
             <div class="logo" :class="{'highlight':totalCount>0}">
               <i class="icon-shopping_cart" :class="{'highlight':totalCount>0}"></i>
             </div>
+
+            <!-- 购物车右上角的数字 -->
             <div class="num" v-show="totalCount>0">{{totalCount}}</div>
           </div>
           <div class="price" :class="{'highlight':totalPrice>0}">￥{{totalPrice}}</div>
@@ -44,7 +46,7 @@
                   <span>￥{{food.price*food.count}}</span>
                 </div>
                 <div class="cartcontrol-wrapper">
-                  <cartcontrol @add="addFood" :food="food"></cartcontrol>
+                  <!-- <cartcontrol @add="addFood" :food="food"></cartcontrol> -->
                 </div>
               </li>
             </ul>
@@ -52,6 +54,8 @@
         </div>
       </transition>
     </div>
+
+    <!-- 添加购物车时背景的蒙层页面 -->
     <transition name="fade">
       <div class="list-mask" @click="hideList" v-show="listShow"></div>
     </transition>
@@ -59,16 +63,150 @@
 </template>
 
 <script>
-import cartcontrol from '@/components/cartcontrol/cartcontrol'
+// import cartcontrol from '@/components/cartcontrol/cartcontrol'
+import BScroll from 'better-scroll'
 export default {
-  data() {
-    return {
+    props: {
+      selectFoods: {
+        type: Array,
+        default() {
+          return [
+            {
+              price: 10,
+              count: 1
+            }
+          ]
+        }
+      },
+      deliveryPrice: {
+        type: Number,
+        default: 0
+      },
+      minPrice: {
+        type: Number,
+        default: 0
+      }
+    },
+    data() {
+        return {
+            balls: [
+              {
+                show: false
+              },
+              {
+                show: false
+              },
+              {
+                show: false
+              },
+              {
+                show: false
+              },
+              {
+                show: false
+              },
+            ],
+            dropBalls: [],
+            fold: true
+        }
+    },
+    computed: {
+      payClass() {
+        if (this.totalPrice < this.minPrice) {
+          return 'not-enough'
+        } else {
+          return 'enough'
+        }
+      },
+      totalPrice(){
+        let total = 0;
+        this.selectFoods.forEach((food)=>{
+          total += food.count * food.price
+        })
+        return total
+      },
+      totalCount() {
+        let count = 0
+        this.selectFoods.forEach((food) => {
+          count += food.count
+        })
+        return count
+      },
+      payDesc() {
+        if(this.totalPrice === 0) {
+          return `￥${this.minPrice}元起送`
+        } else if(this.totalPrice < this.minPrice) {
+          let diff = this.minPrice - this.totalPrice
+          return `还差￥${diff}元起送`
+        } else {
+          return '去结算'
+        }
+      },
+      listShow() {
+        if(!this.totalCount) {
+          this.fold = true
+          return false
+        }
+        let show = !this.fold
+        if(show) {
+          this.$nextTick(() => {
+            if(!this.scroll) {
+              this.scroll = new BScroll(this.$refs.listContent, {click: true})
+            } else {
+              this.scroll.refresh()
+            }
+          })
+        }
+        return (show)
+      }
       
-    }
-  },
-  props:{}
-};
+    },
+    methods: {
+      toggleList() {},
+      beforeDrop(el) {
+        let count = this.balls.length
+        while(count--){
+          let ball = this.balls[count]
+          if(ball.show){
+            let rect = ball.el.getBoundingClientRect()
+            let x = rect.left - 32
+            let y = -(window.innerHeight - rect.top -22)
+            el.style.display = ''
+            el.style.webkitTransform = `translate3d(0,${y}px,0)`
+            el.style.transform = `translate3d(0,${y}px,0)`
+            let inner = el.getElementsByClassName('inner-hook')[0]
+            inner.style.webkitTransform = `translate3d(${x}px,0,0)`
+            inner.style.transform = `translate3d(${x}px,0,0)`
+          }
+        }
+      },
+      dropping(el,done) {
+        let rf = el.offsetHeight  //获取dom结点高度
+        this.$$nextTick(()=>{
+            el.style.webkitTransform = `translate3d(0,0,0)`
+            el.style.transform = `translate3d(0,0,0)`
+            let inner = el.getElementsByClassName('inner-hook')[0]
+            inner.style.webkitTransform = `translate3d(0,0,0)`
+            inner.style.transform = `translate3d(0,0,0)`
+            el.addEventListener('transitionend',done)
+        })
+      },
+      afterDrop(el) {
+        let ball = this.dropBalls.shift()
+        if(ball){
+          ball.show = false
+          el.style.display = 'none'
+        }
+      },
+      empty() {},
+      hideList() {}
+    },
+    created() {
+
+    },
+}
 </script>
+
 
 <style lang="stylus" rel="stylesheet/stylus">
 @import '../../common/stylus/mixin.styl';

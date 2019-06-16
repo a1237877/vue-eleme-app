@@ -129,6 +129,7 @@ export default {
       //体验优化 异步执行下落动画
       this.$nextTick(()=>{
         //动画组件
+        this.$refs.shopcart.drop(target)
       })
     },
     _calculateHeight(){
